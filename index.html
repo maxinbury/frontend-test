@@ -159,9 +159,9 @@
 
 
         <div id="preset-buttons">
-            <button onclick="setPresetText('Que es yape?')">Que es yape?</button>
-            <button onclick="setPresetText('Que puede hacer yape por mi?')">Que puede hacer yape por mi?</button>
-            <button onclick="setPresetText('Hola yape, como me creo una cuenta?')">Hola yape, como me creo una cuenta?</button>
+            <button onclick="setPresetText('Hola, quiero crearme una cuenta en Yape')">Hola, quiero crearme una cuenta en Yape</button>
+            <button onclick="setPresetText('¿Que es Yape?')">¿Que es Yape?'</button>
+            <button onclick="setPresetText('¿Que beneficios tengo usando Yape?')">¿Que beneficios tengo usando Yape?</button>
         </div>
 
         <div id="result" style="display: flex; flex-direction: column;"></div>
@@ -181,22 +181,38 @@
     </div>
 
     <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            sendBotMessage('Hola, soy el Chatbot Yape ¿Cómo puedo ayudarte hoy?');
+        });
+    
+        document.querySelector("#message").addEventListener("keypress", function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    
         function setPresetText(text) {
             document.getElementById("message").value = text;
         }
-
+    
+        async function sendBotMessage(message) {
+            let responseElem = document.createElement("div");
+            responseElem.className = "answer";
+            responseElem.textContent = message;
+            document.getElementById("result").appendChild(responseElem);
+        }
+    
         async function sendMessage() {
             var message = document.getElementById("message").value;
-
-            // Append the user's question to the result div
+    
             let questionElem = document.createElement("div");
             questionElem.className = "question";
             questionElem.textContent = message;
             document.getElementById("result").appendChild(questionElem);
-
-            // Show the spinner
+    
             document.getElementById("spinner").style.display = "block";
-
+    
             var response = await fetch('https://test-yape-streaming.bluemushroom-96f39e00.brazilsouth.azurecontainerapps.io/api/messages', {
                 method: 'POST',
                 headers: {
@@ -204,37 +220,30 @@
                 },
                 body: JSON.stringify({ content: message })
             });
-
+    
             var reader = response.body.getReader();
             var decoder = new TextDecoder('utf-8');
-
+    
             let responseElem = document.createElement("div");
             responseElem.className = "answer";
             elemDiv = document.getElementById("result").appendChild(responseElem)
-
+    
             reader.read().then(function processResult(result) {
                 if (result.done) {
-                    // Hide the spinner when request is done
                     document.getElementById("spinner").style.display = "none";
                     return;
                 }
-
+    
                 let token = decoder.decode(result.value);
-
-                // Create a text node to safely insert content without parsing as HTML.
                 if (token.endsWith('.') || token.endsWith('!') || token.endsWith('?')) {
                     elemDiv.innerHTML += token + "<br>";
                 } else {
                     elemDiv.innerHTML += token + '';
                 }
-
+    
                 return reader.read().then(processResult);
             });
-
         }
-
-
-
     </script>
 
 
