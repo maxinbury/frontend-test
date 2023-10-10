@@ -161,8 +161,8 @@
 
         <div id="preset-buttons">
             <button onclick="setPresetText('Hola, quiero crearme una cuenta en Yape')">Hola, quiero crearme una cuenta en Yape</button>
-            <button onclick="setPresetText('¿Que es Yape?')">¿Que es Yape?'</button>
-            <button onclick="setPresetText('¿Que beneficios tengo usando Yape?')">¿Que beneficios tengo usando Yape?</button>
+            <button onclick="setPresetText('Quiero comunicarme con un asesor');">Quiero comunicarme con un asesor</button>
+            <button onclick="setPresetText('He terminado');">He terminado</button>
         </div>
 
         <div id="result" style="display: flex; flex-direction: column;"></div>
@@ -183,7 +183,7 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            sendBotMessage('Hola, soy el Chatbot Yape ¿Cómo puedo ayudarte hoy?');
+            sendBotMessage('Hola! Soy tu asistente de Yape! Como te llamas y en qué te puedo ayudar?');
         });
     
         document.querySelector("#message").addEventListener("keypress", function (e) {
@@ -213,44 +213,46 @@
             document.getElementById("result").appendChild(questionElem);
     
             document.getElementById("spinner").style.display = "block";
+            if(message == 'Quiero comunicarme con un asesor') {
+                window.open('https://api.whatsapp.com/send?phone=51939339299&text=%C2%A1Buen%20d%C3%ADa!%20Vengo%20de%20la%20web.%20%F0%9F%A4%93');
+            } 
+            else if(message == 'He terminado') {
+                sendBotMessage("Considerando la atención que te acabo de brindar, ¿qué tan probable es que me recomiendes? Responde ingresando un número del 0 (muy improbable) al 10 (muy probable).");
+            }
+            else {
+                var response = await fetch('https://test-yape-streaming.bluemushroom-96f39e00.brazilsouth.azurecontainerapps.io/api/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: message })
+                });
     
-            var response = await fetch('https://test-yape-streaming.bluemushroom-96f39e00.brazilsouth.azurecontainerapps.io/api/messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ content: message })
-            });
+                var reader = response.body.getReader();
+                var decoder = new TextDecoder('utf-8');
     
-            var reader = response.body.getReader();
-            var decoder = new TextDecoder('utf-8');
+                let responseElem = document.createElement("div");
+                responseElem.className = "answer";
+                elemDiv = document.getElementById("result").appendChild(responseElem)
     
-            let responseElem = document.createElement("div");
-            responseElem.className = "answer";
-            elemDiv = document.getElementById("result").appendChild(responseElem)
+                reader.read().then(function processResult(result) {
+                    if (result.done) {
+                        document.getElementById("spinner").style.display = "none";
+                        return;
+                    }
     
-            reader.read().then(function processResult(result) {
-                if (result.done) {
-                    document.getElementById("spinner").style.display = "none";
-                    return;
-                }
+                    let token = decoder.decode(result.value);
+                    if (token.endsWith('.') || token.endsWith('!') || token.endsWith('?')) {
+                        elemDiv.innerHTML += token + "<br>";
+                    } else {
+                        elemDiv.innerHTML += token + '';
+                    }
     
-                let token = decoder.decode(result.value);
-                if (token.endsWith('.') || token.endsWith('!') || token.endsWith('?')) {
-                    elemDiv.innerHTML += token + "<br>";
-                } else {
-                    elemDiv.innerHTML += token + '';
-                }
-    
-                return reader.read().then(processResult);
-            });
+                    return reader.read().then(processResult);
+                });
+            }
         }
     </script>
-
-
-
-
-
 
 
 </body>
