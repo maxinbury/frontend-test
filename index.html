@@ -168,7 +168,6 @@
         <div id="result" style="display: flex; flex-direction: column;"></div>
 
 
-
         <div>
             <input type="text" id="message" placeholder="Escribe tu mensaje aqui">
             <button onclick="sendMessage()">Enviar Mensaje</button>
@@ -178,48 +177,58 @@
 
 
         <img id="displayed-image" src="" alt="Generated Image" style="max-width: 100%; display: none;">
+        
 
     </div>
 
     <script>
+        var userFinished = false;
+        var userRated = false;
+        
         document.addEventListener("DOMContentLoaded", function() {
             sendBotMessage('Hola! Soy tu asistente de Yape! Como te llamas y en qué te puedo ayudar?');
         });
-    
+
         document.querySelector("#message").addEventListener("keypress", function (e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 sendMessage();
             }
         });
-    
+
         function setPresetText(text) {
             document.getElementById("message").value = text;
         }
-    
+
         async function sendBotMessage(message) {
             let responseElem = document.createElement("div");
             responseElem.className = "answer";
             responseElem.textContent = message;
             document.getElementById("result").appendChild(responseElem);
         }
-    
+
         async function sendMessage() {
             var message = document.getElementById("message").value;
-    
+
             let questionElem = document.createElement("div");
             questionElem.className = "question";
             questionElem.textContent = message;
             document.getElementById("result").appendChild(questionElem);
-    
+
             document.getElementById("spinner").style.display = "block";
-            if(message == 'Quiero comunicarme con un asesor') {
+
+            if (message == 'Quiero comunicarme con un asesor') {
                 window.open('https://api.whatsapp.com/send?phone=51939339299&text=%C2%A1Buen%20d%C3%ADa!%20Vengo%20de%20la%20web.%20%F0%9F%A4%93');
-            } 
-            else if(message == 'He terminado') {
-                sendBotMessage("Considerando la atención que te acabo de brindar, ¿qué tan probable es que me recomiendes? Responde ingresando un número del 0 (muy improbable) al 10 (muy probable).");
-            }
-            else {
+            } else if (message == 'He terminado') {
+                userFinished = true;
+                sendBotMessage('Considerando la ayuda de nuestro chatbot de atención al cliente, ¿podrías calificarnos del 1 al 10?');
+            } else if (Number(message) >= 0 && Number(message) <= 10 && userFinished && !userRated) {
+                userRated = true;
+                userFinished = false;
+                sendBotMessage(`Gracias por su calificación de ${message} puntos.`);
+            } else {
+                userRated = false;
+                userFinished = false;
                 var response = await fetch('https://test-yape-streaming.bluemushroom-96f39e00.brazilsouth.azurecontainerapps.io/api/messages', {
                     method: 'POST',
                     headers: {
@@ -227,32 +236,33 @@
                     },
                     body: JSON.stringify({ content: message })
                 });
-    
+
                 var reader = response.body.getReader();
                 var decoder = new TextDecoder('utf-8');
-    
+
                 let responseElem = document.createElement("div");
                 responseElem.className = "answer";
                 elemDiv = document.getElementById("result").appendChild(responseElem)
-    
+
                 reader.read().then(function processResult(result) {
                     if (result.done) {
                         document.getElementById("spinner").style.display = "none";
                         return;
                     }
-    
+
                     let token = decoder.decode(result.value);
                     if (token.endsWith('.') || token.endsWith('!') || token.endsWith('?')) {
                         elemDiv.innerHTML += token + "<br>";
                     } else {
                         elemDiv.innerHTML += token + '';
                     }
-    
+
                     return reader.read().then(processResult);
                 });
             }
         }
     </script>
+
 
 
 </body>
